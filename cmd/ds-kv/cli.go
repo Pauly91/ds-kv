@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"ds-kv/pkg/client"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
@@ -16,7 +18,10 @@ func main() {
 	fmt.Println("  delete <key>")
 	fmt.Println("  exit")
 
-	
+	kv, e := client.NewKVClient("")
+	if e != nil {
+		log.Fatalf("error creating kv client: '%s'", e.Error())
+	}
 
 	for {
 		fmt.Print("> ")
@@ -42,17 +47,20 @@ func main() {
 			}
 
 			fmt.Printf("Set %s = %s\n", parts[1], parts[2])
+			if kv.Set(parts[1], parts[2]) != nil {
+				fmt.Println("Error setting value")
+			}
 
 		case "get":
 			if len(parts) < 2 {
 				fmt.Println("Error: get requires key")
 				continue
 			}
-			/* if val, exists := kvs.Get(parts[1]); exists {
+			if val, e := kv.Get(parts[1]); e == nil {
 				fmt.Printf("%s = %s\n", parts[1], val)
 			} else {
 				fmt.Printf("Key '%s' not found\n", parts[1])
-			} */
+			}
 
 		case "delete":
 			if len(parts) < 2 {

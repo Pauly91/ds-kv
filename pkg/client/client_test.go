@@ -1,6 +1,8 @@
 package client
 
 import (
+	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -57,12 +59,38 @@ func Test_Client_Set(t *testing.T) {
 	}
 }
 
-func Test_Client_Get(t *testing.T) {
-	p := t.TempDir()
-	c, e := NewKVClient(p)
-	require.NoError(t, e, "error while creating client with a valid file path")
+func TestConcurrentSetAndGet(t *testing.T) {
+	dir := t.TempDir()
+	kvClient, err := NewKVClient(dir)
+	if err != nil {
+		t.Fatalf("failed to create KV client: %v", err)
+	}
 
-	c.Set("key1","value1")
+	const goroutines = 100
+	var wg sync.WaitGroup
 
-	
+	// Launch concurrent Set
+	for i := range goroutines {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			key := "key" + strconv.Itoa(i)
+			val := "value" + strconv.Itoa(i)
+			if err := kvClient.Set(key, val); err != nil {
+				t.Errorf("Set failed: %v", err)
+			}
+		}(i)
+	}
+
+	// Launch concurrent Get (may not find all if Set didn't finish)
+	for i := range goroutines {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			key := "key" + strconv.Itoa(i)
+			_, _ = kvClient.Get(key) // ignore not-found errors
+		}(i)
+	}
+
+	wg.Wait()
 }

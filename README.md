@@ -1,3 +1,3 @@
 # ds-kv
 
-The goal here is to create a DiStributed Key Value store from scratch.
+The goal here is to create a Distributed Key Value store from scratch.
